@@ -1,0 +1,152 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+model Participant {
+  id         String            @id @default(uuid()) @db.Uuid
+  tokenHash  String            @unique
+  createdAt  DateTime          @default(now())
+  lastSeenAt DateTime?
+  status     ParticipantStatus @default(ACTIVE)
+
+  sessions Session[]
+  batches  Batch[]
+
+  @@map("participants")
+}
+
+model Session {
+  id            String    @id @default(uuid()) @db.Uuid
+  participantId String    @db.Uuid
+  startedAt     DateTime  @default(now())
+  endedAt       DateTime?
+  appVersion    String?
+  deviceModel   String?
+  os            String?
+
+  participant Participant @relation(fields: [participantId], references: [id], onDelete: Cascade)
+  batches     Batch[]
+
+  @@index([participantId])
+  @@map("sessions")
+}
+
+model Batch {
+  id               String   @id @default(uuid()) @db.Uuid
+  participantId    String   @db.Uuid
+  sessionId        String?  @db.Uuid
+  receivedAt       DateTime @default(now())
+  measurementCount Int
+  schemaVersion    Int      @default(1)
+
+  participant Participant @relation(fields: [participantId], references: [id], onDelete: Cascade)
+  session     Session?    @relation(fields: [sessionId], references: [id], onDelete: SetNull)
+
+  measurements Measurement[]
+
+  @@index([participantId])
+  @@index([sessionId])
+  @@map("batches")
+}
+
+model Measurement {
+  id         String   @id @default(uuid()) @db.Uuid
+  batchId    String   @db.Uuid
+  measuredAt DateTime
+  receivedAt DateTime @default(now())
+
+  latitude         Float
+  longitude        Float
+  altitude         Float?
+  accuracy         Float?
+  altitudeAccuracy Float?
+  speed            Float?
+  heading          Float?
+
+  batch            Batch             @relation(fields: [batchId], references: [id], onDelete: Cascade)
+  motion           Motion?
+  servingCell      ServingCell?
+  neighboringCells NeighboringCell[]
+
+  @@index([batchId])
+  @@index([measuredAt])
+  @@map("measurements")
+}
+
+model Motion {
+  id            String @id @default(uuid()) @db.Uuid
+  measurementId String @unique @db.Uuid
+
+  accelerometerX Float?
+  accelerometerY Float?
+  accelerometerZ Float?
+
+  gyroscopeX Float?
+  gyroscopeY Float?
+  gyroscopeZ Float?
+
+  measurement Measurement @relation(fields: [measurementId], references: [id], onDelete: Cascade)
+
+  @@map("motion")
+}
+
+model ServingCell {
+  id            String @id @default(uuid()) @db.Uuid
+  measurementId String @unique @db.Uuid
+
+  registered Boolean
+  technology String
+
+  cellId BigInt?
+  pci    Int?
+  tac    Int?
+  arfcn  Int?
+
+  mcc String?
+  mnc String?
+
+  rsrp Float?
+  rsrq Float?
+  rssi Float?
+  sinr Float?
+
+  measurement Measurement @relation(fields: [measurementId], references: [id], onDelete: Cascade)
+
+  @@map("serving_cells")
+}
+
+model NeighboringCell {
+  id            String @id @default(uuid()) @db.Uuid
+  measurementId String @db.Uuid
+
+  registered Boolean
+  technology String
+
+  cellId BigInt?
+  pci    Int?
+  tac    Int?
+  arfcn  Int?
+
+  mcc String?
+  mnc String?
+
+  rsrp Float?
+  rsrq Float?
+  rssi Float?
+  sinr Float?
+
+  measurement Measurement @relation(fields: [measurementId], references: [id], onDelete: Cascade)
+
+  @@index([measurementId])
+  @@map("neighboring_cells")
+}
+
+enum ParticipantStatus {
+  ACTIVE
+  REVOKED
+  DELETED
+}
