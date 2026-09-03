@@ -58,6 +58,15 @@ export const measurementSchema = z.object({
 });
 
 export const batchSchema = z.object({
+    clientBatchId: z
+        .string()
+        .min(16)
+        .max(64)
+        .regex(
+            /^[a-zA-Z0-9_-]+$/,
+            'clientBatchId contains invalid characters.',
+        ),
+
     measurements: z.array(measurementSchema).min(1).max(500),
 });
 

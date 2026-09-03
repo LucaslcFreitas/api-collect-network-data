@@ -1,21 +1,18 @@
 import { Router } from 'express';
-import { registerParticipant } from '../controllers/participantController.js';
-import { participantRegistrationRateLimit } from '../middleware/rateLimitMiddleware.js';
 import {
-    authenticateParticipant,
-    AuthenticatedRequest,
-} from '../middleware/authMiddleware.js';
+    registerParticipant,
+    getMe,
+    updateMe,
+} from '../controllers/participantController.js';
+import { participantRegistrationRateLimit } from '../middleware/rateLimitMiddleware.js';
+import { authenticateParticipant } from '../middleware/authMiddleware.js';
 
 const router = Router();
 
 router.post('/', participantRegistrationRateLimit, registerParticipant);
 
-router.get('/me', authenticateParticipant, (req, res) => {
-    const authenticatedRequest = req as AuthenticatedRequest;
+router.get('/', authenticateParticipant, getMe);
 
-    res.status(200).json({
-        participantId: authenticatedRequest.participantId,
-    });
-});
+router.patch('/', authenticateParticipant, updateMe);
 
 export default router;

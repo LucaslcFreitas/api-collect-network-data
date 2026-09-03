@@ -9,47 +9,33 @@ datasource db {
 model Participant {
   id         String            @id @default(uuid()) @db.Uuid
   tokenHash  String            @unique
+  appVersion  String?
+  deviceModel String?
+  os          String?
   createdAt  DateTime          @default(now())
   lastSeenAt DateTime?
   status     ParticipantStatus @default(ACTIVE)
 
-  sessions Session[]
   batches  Batch[]
 
   @@map("participants")
 }
 
-model Session {
-  id            String    @id @default(uuid()) @db.Uuid
-  participantId String    @db.Uuid
-  startedAt     DateTime  @default(now())
-  endedAt       DateTime?
-  appVersion    String?
-  deviceModel   String?
-  os            String?
-
-  participant Participant @relation(fields: [participantId], references: [id], onDelete: Cascade)
-  batches     Batch[]
-
-  @@index([participantId])
-  @@map("sessions")
-}
-
 model Batch {
   id               String   @id @default(uuid()) @db.Uuid
   participantId    String   @db.Uuid
-  sessionId        String?  @db.Uuid
-  receivedAt       DateTime @default(now())
+  clientBatchId    String   @db.VarChar(64)
+  createdAt        DateTime @default(now())
   measurementCount Int
   schemaVersion    Int      @default(1)
 
   participant Participant @relation(fields: [participantId], references: [id], onDelete: Cascade)
-  session     Session?    @relation(fields: [sessionId], references: [id], onDelete: SetNull)
 
   measurements Measurement[]
 
+  @@unique([participantId, clientBatchId])
   @@index([participantId])
-  @@index([sessionId])
+  @@index([createdAt])
   @@map("batches")
 }
 

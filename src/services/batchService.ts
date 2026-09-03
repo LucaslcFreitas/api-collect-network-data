@@ -30,6 +30,7 @@ export async function createBatch(
         const batch = await transaction.batch.create({
             data: {
                 participantId,
+                clientBatchId: input.clientBatchId,
                 measurementCount: input.measurements.length,
                 schemaVersion: 1,
             },

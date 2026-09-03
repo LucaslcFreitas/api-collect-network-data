@@ -39,6 +39,18 @@ export async function uploadBatch(req: Request, res: Response): Promise<void> {
     } catch (error) {
         console.error('Batch upload failed:', error);
 
+        if (
+            error instanceof Error &&
+            error.message.includes('Unique constraint')
+        ) {
+            res.status(409).json({
+                error: 'BATCH_ALREADY_EXISTS',
+                message: 'A batch with this clientBatchId already exists.',
+            });
+
+            return;
+        }
+
         res.status(500).json({
             error: 'INTERNAL_SERVER_ERROR',
             message: 'Unable to store measurement batch.',
