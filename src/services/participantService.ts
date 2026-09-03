@@ -69,3 +69,34 @@ export async function updateParticipant(
         },
     });
 }
+
+export async function revokeParticipant(participantId: string) {
+    return prisma.participant.update({
+        where: {
+            id: participantId,
+        },
+
+        data: {
+            status: 'REVOKED',
+            revokedAt: new Date(),
+        },
+
+        select: {
+            id: true,
+            status: true,
+            revokedAt: true,
+        },
+    });
+}
+
+export async function deleteParticipant(participantId: string) {
+    return prisma.participant.delete({
+        where: {
+            id: participantId,
+        },
+
+        select: {
+            id: true,
+        },
+    });
+}

@@ -14,6 +14,7 @@ model Participant {
   os          String?
   createdAt  DateTime          @default(now())
   lastSeenAt DateTime?
+  revokedAt DateTime?
   status     ParticipantStatus @default(ACTIVE)
 
   batches  Batch[]
@@ -134,5 +135,4 @@ model NeighboringCell {
 enum ParticipantStatus {
   ACTIVE
   REVOKED
-  DELETED
 }

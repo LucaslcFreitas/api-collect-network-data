@@ -8,7 +8,7 @@ const router = Router();
 
 router.get('/health', healthCheck);
 
-router.use('/participants', participantRoutes);
+router.use('/participant', participantRoutes);
 
 router.use('/batches', batchRoutes);
 
