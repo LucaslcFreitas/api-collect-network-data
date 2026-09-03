@@ -121,6 +121,15 @@ export async function createBatch(
             }
         }
 
+        await transaction.participant.update({
+            where: {
+                id: participantId,
+            },
+            data: {
+                lastSeen: new Date(),
+            },
+        });
+
         return batch;
     });
 
