@@ -26,6 +26,55 @@ export async function getParticipantData(
                 measurementCount: true,
                 schemaVersion: true,
                 createdAt: true,
+                measurements: {
+                    orderBy: {
+                        measuredAt: 'asc',
+                    },
+                    select: {
+                        id: true,
+                        batchId: true,
+                        measuredAt: true,
+                        receivedAt: true,
+                        latitude: true,
+                        longitude: true,
+                        altitude: true,
+                        accuracy: true,
+                        altitudeAccuracy: true,
+                        speed: true,
+                        heading: true,
+                        motion: {
+                            select: {
+                                id: true,
+                                measurementId: true,
+                                accelerometerX: true,
+                                accelerometerY: true,
+                                accelerometerZ: true,
+                                gyroscopeX: true,
+                                gyroscopeY: true,
+                                gyroscopeZ: true,
+                            }
+                        },
+                        servingCell: {
+                            select: {
+                                id: true,
+                                measurementId: true,
+                                registered: true,
+                                technology: true,
+                                cellId: true,
+                                pci: true,
+                                tac: true,
+                                arfcn: true,
+                                mcc: true,
+                                mnc: true,
+                                rsrp: true,
+                                rsrq: true,
+                                rssi: true,
+                                sinr: true,
+                            }
+                        },
+                        neighboringCells: true,
+                    }
+                }
             },
         }),
 

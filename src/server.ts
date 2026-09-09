@@ -2,6 +2,10 @@ import app from './app.js';
 import { env } from './config/env.js';
 import { prisma } from './db/prisma.js';
 
+(BigInt.prototype as any).toJSON = function () {
+    return this.toString();
+};
+
 const server = app.listen(env.port, () => {
     console.log(`API running on http://localhost:${env.port}`);
 });

@@ -126,7 +126,7 @@ export async function createBatch(
                 id: participantId,
             },
             data: {
-                lastSeen: new Date(),
+                lastSeenAt: new Date(),
             },
         });
 
