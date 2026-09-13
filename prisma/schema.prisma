@@ -46,8 +46,8 @@ model Measurement {
   measuredAt DateTime
   receivedAt DateTime @default(now())
 
-  latitude         Float
-  longitude        Float
+  latitude         Float?
+  longitude        Float?
   altitude         Float?
   accuracy         Float?
   altitudeAccuracy Float?
@@ -85,8 +85,8 @@ model ServingCell {
   id            String @id @default(uuid()) @db.Uuid
   measurementId String @unique @db.Uuid
 
-  registered Boolean
-  technology String
+  registered Boolean?
+  technology String?
 
   cellId BigInt?
   pci    Int?
@@ -100,6 +100,7 @@ model ServingCell {
   rsrq Float?
   rssi Float?
   sinr Float?
+  timingAdvance Int?
 
   measurement Measurement @relation(fields: [measurementId], references: [id], onDelete: Cascade)
 
@@ -110,8 +111,8 @@ model NeighboringCell {
   id            String @id @default(uuid()) @db.Uuid
   measurementId String @db.Uuid
 
-  registered Boolean
-  technology String
+  registered Boolean?
+  technology String?
 
   cellId BigInt?
   pci    Int?
@@ -125,6 +126,7 @@ model NeighboringCell {
   rsrq Float?
   rssi Float?
   sinr Float?
+  timingAdvance Int?
 
   measurement Measurement @relation(fields: [measurementId], references: [id], onDelete: Cascade)
 

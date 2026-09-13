@@ -93,6 +93,7 @@ export async function createBatch(
                     rsrq: cell.rsrq,
                     rssi: cell.rssi,
                     sinr: cell.sinr,
+                    timingAdvance: cell.timingAdvance,
                 },
             });
 
@@ -116,6 +117,7 @@ export async function createBatch(
                         rsrq: neighbor.rsrq,
                         rssi: neighbor.rssi,
                         sinr: neighbor.sinr,
+                        timingAdvance: neighbor.timingAdvance,
                     })),
                 });
             }

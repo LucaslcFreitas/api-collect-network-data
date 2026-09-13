@@ -7,14 +7,31 @@ import {
 } from '../services/participantService.js';
 import { AuthenticatedRequest } from '../middleware/authMiddleware.js';
 import { updateParticipant } from '../services/participantService.js';
-import { updateParticipantSchema } from '../schemas/participantSchema.js';
+import {
+    participantDeviceInfoSchema,
+    updateParticipantSchema,
+} from '../schemas/participantSchema.js';
 
 export async function registerParticipant(
     _req: Request,
     res: Response,
 ): Promise<void> {
     try {
-        const participant = await createParticipant();
+        const validation = participantDeviceInfoSchema.safeParse(
+            _req.body ?? {},
+        );
+
+        if (!validation.success) {
+            res.status(400).json({
+                error: 'INVALID_REQUEST',
+                message: 'Invalid participant information.',
+                details: validation.error.issues,
+            });
+
+            return;
+        }
+
+        const participant = await createParticipant(validation.data);
 
         res.status(201).json(participant);
     } catch (error) {

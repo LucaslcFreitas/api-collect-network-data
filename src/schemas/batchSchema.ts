@@ -43,17 +43,14 @@ const cellSchema = z.object({
     rsrq: z.number().finite().nullable().optional(),
     rssi: z.number().finite().nullable().optional(),
     sinr: z.number().finite().nullable().optional(),
+    timingAdvance: z.number().finite().nullable().optional(),
 });
 
 export const measurementSchema = z.object({
     timestamp: z.number().int().positive(),
-
     location: locationSchema,
-
     motion: motionSchema,
-
     servingCell: cellSchema,
-
     neighboringCells: z.array(cellSchema).max(32),
 });
 

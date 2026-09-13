@@ -10,13 +10,16 @@ export interface CreateParticipantResult {
     token: string;
 }
 
-export async function createParticipant(): Promise<CreateParticipantResult> {
+export async function createParticipant(
+    data: UpdateParticipantInput = {},
+): Promise<CreateParticipantResult> {
     const token = generateParticipantToken();
     const tokenHash = hashParticipantToken(token);
 
     const participant = await prisma.participant.create({
         data: {
             tokenHash,
+            ...data,
         },
         select: {
             id: true,

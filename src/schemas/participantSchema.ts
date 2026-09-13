@@ -1,6 +1,6 @@
 import { z } from 'zod';
 
-export const updateParticipantSchema = z
+export const participantDeviceInfoSchema = z
     .object({
         appVersion: z.string().min(1).max(50).optional(),
 
@@ -9,5 +9,7 @@ export const updateParticipantSchema = z
         os: z.string().min(1).max(50).optional(),
     })
     .strict();
+
+export const updateParticipantSchema = participantDeviceInfoSchema;
 
 export type UpdateParticipantInput = z.infer<typeof updateParticipantSchema>;
