@@ -1,5 +1,37 @@
 import { prisma } from '../db/prisma.js';
 
+function formatCell<T extends {
+    registered: boolean | null;
+    technology: string | null;
+    cellId: bigint | null;
+    pci: number | null;
+    tac: number | null;
+    arfcn: number | null;
+    mcc: string | null;
+    mnc: string | null;
+    rsrp: number | null;
+    rsrq: number | null;
+    rssi: number | null;
+    sinr: number | null;
+    timingAdvance: number | null;
+}>(cell: T) {
+    return {
+        registered: cell.registered,
+        technology: cell.technology,
+        cellId: cell.cellId?.toString() ?? null,
+        pci: cell.pci,
+        tac: cell.tac,
+        arfcn: cell.arfcn,
+        mcc: cell.mcc,
+        mnc: cell.mnc,
+        rsrp: cell.rsrp,
+        rsrq: cell.rsrq,
+        rssi: cell.rssi,
+        sinr: cell.sinr,
+        timingAdvance: cell.timingAdvance,
+    };
+}
+
 export async function getParticipantData(
     participantId: string,
     page: number,
@@ -31,21 +63,21 @@ export async function getParticipantData(
                         measuredAt: 'asc',
                     },
                     select: {
-                        id: true,
-                        batchId: true,
                         measuredAt: true,
                         receivedAt: true,
-                        latitude: true,
-                        longitude: true,
-                        altitude: true,
-                        accuracy: true,
-                        altitudeAccuracy: true,
-                        speed: true,
-                        heading: true,
+                        location: {
+                            select: {
+                                latitude: true,
+                                longitude: true,
+                                altitude: true,
+                                accuracy: true,
+                                altitudeAccuracy: true,
+                                speed: true,
+                                heading: true,
+                            },
+                        },
                         motion: {
                             select: {
-                                id: true,
-                                measurementId: true,
                                 accelerometerX: true,
                                 accelerometerY: true,
                                 accelerometerZ: true,
@@ -56,8 +88,6 @@ export async function getParticipantData(
                         },
                         servingCell: {
                             select: {
-                                id: true,
-                                measurementId: true,
                                 registered: true,
                                 technology: true,
                                 cellId: true,
@@ -70,9 +100,26 @@ export async function getParticipantData(
                                 rsrq: true,
                                 rssi: true,
                                 sinr: true,
+                                timingAdvance: true,
                             }
                         },
-                        neighboringCells: true,
+                        neighboringCells: {
+                            select: {
+                                registered: true,
+                                technology: true,
+                                cellId: true,
+                                pci: true,
+                                tac: true,
+                                arfcn: true,
+                                mcc: true,
+                                mnc: true,
+                                rsrp: true,
+                                rsrq: true,
+                                rssi: true,
+                                sinr: true,
+                                timingAdvance: true,
+                            },
+                        },
                     }
                 }
             },
@@ -86,7 +133,34 @@ export async function getParticipantData(
     ]);
 
     return {
-        batches,
+        batches: batches.map(batch => ({
+            id: batch.id,
+            measurementCount: batch.measurementCount,
+            createdAt: batch.createdAt,
+            measurements: batch.measurements.map(measurement => ({
+                timestamp: measurement.measuredAt,
+                receivedAt: measurement.receivedAt,
+                location: measurement.location,
+                motion: measurement.motion
+                    ? {
+                        accelerometer: {
+                            x: measurement.motion.accelerometerX,
+                            y: measurement.motion.accelerometerY,
+                            z: measurement.motion.accelerometerZ,
+                        },
+                        gyroscope: {
+                            x: measurement.motion.gyroscopeX,
+                            y: measurement.motion.gyroscopeY,
+                            z: measurement.motion.gyroscopeZ,
+                        },
+                    }
+                    : null,
+                servingCell: measurement.servingCell
+                    ? formatCell(measurement.servingCell)
+                    : null,
+                neighboringCells: measurement.neighboringCells.map(formatCell),
+            })),
+        })),
         pagination: {
             page,
             limit,

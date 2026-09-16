@@ -45,13 +45,17 @@ export async function createBatch(
                     batchId: batch.id,
                     measuredAt: toDate(measurement.timestamp),
 
-                    latitude: measurement.location.latitude,
-                    longitude: measurement.location.longitude,
-                    altitude: measurement.location.altitude,
-                    accuracy: measurement.location.accuracy,
-                    altitudeAccuracy: measurement.location.altitudeAccuracy,
-                    speed: measurement.location.speed,
-                    heading: measurement.location.heading,
+                    location: {
+                        create: {
+                            latitude: measurement.location.latitude,
+                            longitude: measurement.location.longitude,
+                            altitude: measurement.location.altitude,
+                            accuracy: measurement.location.accuracy,
+                            altitudeAccuracy: measurement.location.altitudeAccuracy,
+                            speed: measurement.location.speed,
+                            heading: measurement.location.heading,
+                        },
+                    },
                 },
                 select: {
                     id: true,
