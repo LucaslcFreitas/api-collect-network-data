@@ -47,6 +47,7 @@ model Measurement {
   receivedAt DateTime @default(now())
 
   batch            Batch             @relation(fields: [batchId], references: [id], onDelete: Cascade)
+  environment       String? @db.VarChar(100)
   location         Location?
   motion           Motion?
   servingCell      ServingCell?

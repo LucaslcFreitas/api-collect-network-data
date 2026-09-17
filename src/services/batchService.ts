@@ -45,6 +45,7 @@ export async function createBatch(
                     batchId: batch.id,
                     measuredAt: toDate(measurement.timestamp),
 
+                    environment: measurement.environment,
                     location: {
                         create: {
                             latitude: measurement.location.latitude,

@@ -65,6 +65,7 @@ export async function getParticipantData(
                     select: {
                         measuredAt: true,
                         receivedAt: true,
+                        environment: true,
                         location: {
                             select: {
                                 latitude: true,
@@ -140,6 +141,7 @@ export async function getParticipantData(
             measurements: batch.measurements.map(measurement => ({
                 timestamp: measurement.measuredAt,
                 receivedAt: measurement.receivedAt,
+                environment: measurement.environment,
                 location: measurement.location,
                 motion: measurement.motion
                     ? {
