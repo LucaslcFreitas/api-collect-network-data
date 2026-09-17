@@ -5,6 +5,7 @@ import { batchUploadRateLimit } from '../middleware/rateLimitMiddleware.js';
 
 const router = Router();
 
-router.post('/', authenticateParticipant, batchUploadRateLimit, uploadBatch);
+router.post('/', authenticateParticipant, uploadBatch);
+// router.post('/', authenticateParticipant, batchUploadRateLimit, uploadBatch);
 
 export default router;

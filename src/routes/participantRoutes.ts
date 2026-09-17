@@ -11,7 +11,8 @@ import { authenticateParticipant } from '../middleware/authMiddleware.js';
 
 const router = Router();
 
-router.post('/', participantRegistrationRateLimit, registerParticipant);
+router.post('/', registerParticipant);
+// router.post('/', participantRegistrationRateLimit, registerParticipant);
 
 router.get('/', authenticateParticipant, getMe);
 
