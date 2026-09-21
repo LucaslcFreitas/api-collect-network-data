@@ -6,7 +6,7 @@ import {
     revokeMe,
     deleteMe,
 } from '../controllers/participantController.js';
-import { participantRegistrationRateLimit } from '../middleware/rateLimitMiddleware.js';
+// import { participantRegistrationRateLimit } from '../middleware/rateLimitMiddleware.js';
 import { authenticateParticipant } from '../middleware/authMiddleware.js';
 
 const router = Router();

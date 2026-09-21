@@ -5,10 +5,14 @@
     "main": "index.js",
     "scripts": {
         "dev": "tsx watch src/server.ts",
-        "build": "tsc",
+        "build": "prisma generate && tsc",
         "start": "node dist/server.js",
         "typecheck": "tsc --noEmit",
+        "db:migrate:deploy": "prisma migrate deploy",
         "postinstall": "prisma skills sync || exit 0"
+    },
+    "engines": {
+        "node": "24.x"
     },
     "keywords": [],
     "author": "",
