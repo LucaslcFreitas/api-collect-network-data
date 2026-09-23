@@ -1,3 +1,4 @@
+import { randomUUID } from 'node:crypto';
 import { prisma } from '../db/prisma.js';
 import type { BatchInput } from '../schemas/batchSchema.js';
 
@@ -39,93 +40,68 @@ export async function createBatch(
             },
         });
 
-        for (const measurement of input.measurements) {
-            const createdMeasurement = await transaction.measurement.create({
-                data: {
-                    batchId: batch.id,
-                    measuredAt: toDate(measurement.timestamp),
-
-                    environment: measurement.environment,
-                    location: {
-                        create: {
-                            latitude: measurement.location.latitude,
-                            longitude: measurement.location.longitude,
-                            altitude: measurement.location.altitude,
-                            accuracy: measurement.location.accuracy,
-                            altitudeAccuracy: measurement.location.altitudeAccuracy,
-                            speed: measurement.location.speed,
-                            heading: measurement.location.heading,
-                        },
-                    },
-                },
-                select: {
-                    id: true,
-                },
-            });
-
-            await transaction.motion.create({
-                data: {
-                    measurementId: createdMeasurement.id,
-
-                    accelerometerX: measurement.motion.accelerometer.x,
-                    accelerometerY: measurement.motion.accelerometer.y,
-                    accelerometerZ: measurement.motion.accelerometer.z,
-
-                    gyroscopeX: measurement.motion.gyroscope.x,
-                    gyroscopeY: measurement.motion.gyroscope.y,
-                    gyroscopeZ: measurement.motion.gyroscope.z,
-                },
-            });
-
+        const measurements = input.measurements.map(measurement => {
             const cell = measurement.servingCell;
 
-            await transaction.servingCell.create({
-                data: {
-                    measurementId: createdMeasurement.id,
+            return {
+                id: randomUUID(),
+                batchId: batch.id,
+                measuredAt: toDate(measurement.timestamp),
+                environment: measurement.environment,
+                latitude: measurement.location.latitude,
+                longitude: measurement.location.longitude,
+                altitude: measurement.location.altitude,
+                accuracy: measurement.location.accuracy,
+                altitudeAccuracy: measurement.location.altitudeAccuracy,
+                speed: measurement.location.speed,
+                heading: measurement.location.heading,
+                accelerometerX: measurement.motion.accelerometer.x,
+                accelerometerY: measurement.motion.accelerometer.y,
+                accelerometerZ: measurement.motion.accelerometer.z,
+                gyroscopeX: measurement.motion.gyroscope.x,
+                gyroscopeY: measurement.motion.gyroscope.y,
+                gyroscopeZ: measurement.motion.gyroscope.z,
+                servingRegistered: cell.registered,
+                servingTechnology: cell.technology,
+                servingCellId: convertCellId(cell.cellId),
+                servingPci: cell.pci,
+                servingTac: cell.tac,
+                servingArfcn: cell.arfcn,
+                servingMcc: cell.mcc,
+                servingMnc: cell.mnc,
+                servingRsrp: cell.rsrp,
+                servingRsrq: cell.rsrq,
+                servingRssi: cell.rssi,
+                servingSinr: cell.sinr,
+                servingTimingAdvance: cell.timingAdvance,
+            };
+        });
 
-                    registered: cell.registered,
-                    technology: cell.technology,
+        await transaction.measurement.createMany({ data: measurements });
 
-                    cellId: convertCellId(cell.cellId),
-                    pci: cell.pci,
-                    tac: cell.tac,
-                    arfcn: cell.arfcn,
+        const neighboringCells = input.measurements.flatMap((measurement, index) =>
+            measurement.neighboringCells.map(neighbor => ({
+                measurementId: measurements[index].id,
+                registered: neighbor.registered,
+                technology: neighbor.technology,
+                cellId: convertCellId(neighbor.cellId),
+                pci: neighbor.pci,
+                tac: neighbor.tac,
+                arfcn: neighbor.arfcn,
+                mcc: neighbor.mcc,
+                mnc: neighbor.mnc,
+                rsrp: neighbor.rsrp,
+                rsrq: neighbor.rsrq,
+                rssi: neighbor.rssi,
+                sinr: neighbor.sinr,
+                timingAdvance: neighbor.timingAdvance,
+            })),
+        );
 
-                    mcc: cell.mcc,
-                    mnc: cell.mnc,
-
-                    rsrp: cell.rsrp,
-                    rsrq: cell.rsrq,
-                    rssi: cell.rssi,
-                    sinr: cell.sinr,
-                    timingAdvance: cell.timingAdvance,
-                },
+        if (neighboringCells.length > 0) {
+            await transaction.neighboringCell.createMany({
+                data: neighboringCells,
             });
-
-            if (measurement.neighboringCells.length > 0) {
-                await transaction.neighboringCell.createMany({
-                    data: measurement.neighboringCells.map(neighbor => ({
-                        measurementId: createdMeasurement.id,
-
-                        registered: neighbor.registered,
-                        technology: neighbor.technology,
-
-                        cellId: convertCellId(neighbor.cellId),
-                        pci: neighbor.pci,
-                        tac: neighbor.tac,
-                        arfcn: neighbor.arfcn,
-
-                        mcc: neighbor.mcc,
-                        mnc: neighbor.mnc,
-
-                        rsrp: neighbor.rsrp,
-                        rsrq: neighbor.rsrq,
-                        rssi: neighbor.rssi,
-                        sinr: neighbor.sinr,
-                        timingAdvance: neighbor.timingAdvance,
-                    })),
-                });
-            }
         }
 
         await transaction.participant.update({

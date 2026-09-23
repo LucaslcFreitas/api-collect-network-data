@@ -11,7 +11,9 @@ if (!connectionString) {
 
 const adapter = new PrismaPg({
     connectionString,
-    ssl: { rejectUnauthorized: false },
+    ssl:process.env.SSL_MODE === 'True' || process.env.SSL_MODE === 'true'
+        ? { rejectUnauthorized: false }
+        : undefined,
 });
 
 const globalForPrisma = globalThis as unknown as {
