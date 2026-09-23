@@ -131,7 +131,9 @@ export async function getParticipantData(
                 participantId,
             },
         }),
-    ]);
+    ], {
+        timeout: 120_000,
+    });
 
     return {
         batches: batches.map(batch => ({

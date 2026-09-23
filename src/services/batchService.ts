@@ -138,6 +138,8 @@ export async function createBatch(
         });
 
         return batch;
+    }, {
+        timeout: 150_000,
     });
 
     return {
