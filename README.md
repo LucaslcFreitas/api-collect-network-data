@@ -30,7 +30,7 @@ Exemplo:
 
 Para um servidor MongoDB autenticado, use uma URL no formato `mongodb://usuario:SENHA@host:27017/mobile_data?authSource=admin`.
 
-Não há migrations: os documentos são gravados nas collections `participants` e `batches`. Cada documento de `batches` contém suas medições e células vizinhas embutidas.
+Não há migrations: os documentos são gravados nas collections `participants`, `batches` e `environment`. A collection `environment` é inicializada automaticamente com um único documento quando a API inicia. Cada documento de `batches` contém suas medições e células vizinhas embutidas.
 
 # Executar a API em desenvolvimento
 
@@ -54,6 +54,10 @@ Os endpoints disponíveis são:
 - - Insert (POST, protegido): `http://ADDRESS:PORT/api/v1/batches`
 - Data
 - - Get Data (GET, protegido): `http://ADDRESS:PORT/api/v1/data`
+- Environment
+- - Get Options (GET): `http://ADDRESS:PORT/api/v1/environment`
+- - Add Morphology (POST, protegido): `http://ADDRESS:PORT/api/v1/environment/morphology`
+- - Add Topography (POST, protegido): `http://ADDRESS:PORT/api/v1/environment/topography`
 - Health (GET): `http://ADDRESS:PORT/api/v1/health`
 
 Os endpoints protegidos utilizam:

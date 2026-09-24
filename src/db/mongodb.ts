@@ -9,6 +9,7 @@ if (!configuredConnectionString) {
 }
 
 const connectionString: string = configuredConnectionString;
+const mongoTimeoutMs = 150_000;
 
 export interface ParticipantDocument {
     _id: string;
@@ -70,12 +71,50 @@ export interface BatchDocument {
     measurements: MeasurementDocument[];
 }
 
+export interface EnvironmentDocument {
+    _id: string;
+    morphology: string[];
+    topography: string[];
+}
+
+export const defaultEnvironment: Omit<EnvironmentDocument, '_id'> = {
+    morphology: [
+        'Urbano denso (prédios altos)',
+        'Urbano (prédios baixos)',
+        'Suburbano residencial (casas, prédios baixos)',
+        'Condomínio',
+        'Vegetação densa',
+        'Vegetação esparsa',
+        "Espelho d'água",
+        'Rural',
+        'Campo aberto',
+        'Indoor',
+        'Shopping',
+        'Estacionamento fechado',
+        'Estádio ou campo esportivo',
+        'Rodovia',
+        'Estrada',
+    ],
+    topography: [
+        'Subida íngrime',
+        'Subida',
+        'Plano',
+        'Descida',
+        'Descida íngrime',
+    ],
+};
+
 let client: MongoClient | undefined;
 let databasePromise: Promise<Db> | undefined;
 
 async function getDatabase(): Promise<Db> {
     if (!databasePromise) {
-        client = new MongoClient(connectionString);
+        client = new MongoClient(connectionString, {
+            connectTimeoutMS: mongoTimeoutMs,
+            serverSelectionTimeoutMS: mongoTimeoutMs,
+            socketTimeoutMS: mongoTimeoutMs,
+            waitQueueTimeoutMS: mongoTimeoutMs,
+        });
         databasePromise = client.connect().then(async connectedClient => {
             const database = connectedClient.db('mobile_data');
 
@@ -92,6 +131,11 @@ async function getDatabase(): Promise<Db> {
                     participantId: 1,
                     createdAt: -1,
                 }),
+                database.collection<EnvironmentDocument>('environment').updateOne(
+                    { _id: 'default' },
+                    { $setOnInsert: { _id: 'default', ...defaultEnvironment } },
+                    { upsert: true },
+                ),
             ]);
 
             return database;
@@ -104,13 +148,19 @@ async function getDatabase(): Promise<Db> {
 export async function getCollections(): Promise<{
     participants: Collection<ParticipantDocument>;
     batches: Collection<BatchDocument>;
+    environment: Collection<EnvironmentDocument>;
 }> {
     const database = await getDatabase();
 
     return {
         participants: database.collection<ParticipantDocument>('participants'),
         batches: database.collection<BatchDocument>('batches'),
+        environment: database.collection<EnvironmentDocument>('environment'),
     };
+}
+
+export async function initializeDatabase(): Promise<void> {
+    await getDatabase();
 }
 
 export async function checkDatabase(): Promise<void> {
