@@ -77,7 +77,7 @@ async function getDatabase(): Promise<Db> {
     if (!databasePromise) {
         client = new MongoClient(connectionString);
         databasePromise = client.connect().then(async connectedClient => {
-            const database = connectedClient.db();
+            const database = connectedClient.db('mobile_data');
 
             await Promise.all([
                 database.collection<ParticipantDocument>('participants').createIndex(
