@@ -1,9 +1,9 @@
 import { Request, Response } from 'express';
-import { prisma } from '../db/prisma.js';
+import { checkDatabase } from '../db/mongodb.js';
 
 export async function healthCheck(_req: Request, res: Response): Promise<void> {
     try {
-        await prisma.$queryRaw`SELECT 1`;
+        await checkDatabase();
 
         res.status(200).json({
             status: 'ok',

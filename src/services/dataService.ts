@@ -1,24 +1,10 @@
-import { prisma } from '../db/prisma.js';
+import { getCollections, type CellDocument, type MeasurementDocument } from '../db/mongodb.js';
 
-function formatCell<T extends {
-    registered: boolean | null;
-    technology: string | null;
-    cellId: bigint | null;
-    pci: number | null;
-    tac: number | null;
-    arfcn: number | null;
-    mcc: string | null;
-    mnc: string | null;
-    rsrp: number | null;
-    rsrq: number | null;
-    rssi: number | null;
-    sinr: number | null;
-    timingAdvance: number | null;
-}>(cell: T) {
+function formatCell(cell: CellDocument) {
     return {
         registered: cell.registered,
         technology: cell.technology,
-        cellId: cell.cellId?.toString() ?? null,
+        cellId: cell.cellId,
         pci: cell.pci,
         tac: cell.tac,
         arfcn: cell.arfcn,
@@ -32,144 +18,44 @@ function formatCell<T extends {
     };
 }
 
+function formatMeasurement(measurement: MeasurementDocument) {
+    return {
+        timestamp: measurement.timestamp,
+        receivedAt: measurement.receivedAt,
+        environment: measurement.environment,
+        location: measurement.location,
+        motion: measurement.motion,
+        servingCell: formatCell(measurement.servingCell),
+        neighboringCells: measurement.neighboringCells.map(formatCell),
+    };
+}
+
 export async function getParticipantData(
     participantId: string,
     page: number,
     limit: number,
 ) {
     const skip = (page - 1) * limit;
+    const { batches } = await getCollections();
 
-    const [batches, total] = await prisma.$transaction([
-        prisma.batch.findMany({
-            where: {
-                participantId,
-            },
-
-            orderBy: {
-                createdAt: 'desc',
-            },
-
-            skip,
-            take: limit,
-
-            select: {
-                id: true,
-                clientBatchId: true,
-                measurementCount: true,
-                schemaVersion: true,
-                createdAt: true,
-                measurements: {
-                    orderBy: {
-                        measuredAt: 'asc',
-                    },
-                    select: {
-                        measuredAt: true,
-                        receivedAt: true,
-                        environment: true,
-                        latitude: true,
-                        longitude: true,
-                        altitude: true,
-                        accuracy: true,
-                        altitudeAccuracy: true,
-                        speed: true,
-                        heading: true,
-                        accelerometerX: true,
-                        accelerometerY: true,
-                        accelerometerZ: true,
-                        gyroscopeX: true,
-                        gyroscopeY: true,
-                        gyroscopeZ: true,
-                        servingRegistered: true,
-                        servingTechnology: true,
-                        servingCellId: true,
-                        servingPci: true,
-                        servingTac: true,
-                        servingArfcn: true,
-                        servingMcc: true,
-                        servingMnc: true,
-                        servingRsrp: true,
-                        servingRsrq: true,
-                        servingRssi: true,
-                        servingSinr: true,
-                        servingTimingAdvance: true,
-                        neighboringCells: {
-                            select: {
-                                registered: true,
-                                technology: true,
-                                cellId: true,
-                                pci: true,
-                                tac: true,
-                                arfcn: true,
-                                mcc: true,
-                                mnc: true,
-                                rsrp: true,
-                                rsrq: true,
-                                rssi: true,
-                                sinr: true,
-                                timingAdvance: true,
-                            },
-                        },
-                    }
-                }
-            },
-        }),
-
-        prisma.batch.count({
-            where: {
-                participantId,
-            },
-        }),
-    ], {
-        timeout: 120_000,
-    });
+    const [batchDocuments, total] = await Promise.all([
+        batches
+            .find({ participantId })
+            .sort({ createdAt: -1 })
+            .skip(skip)
+            .limit(limit)
+            .toArray(),
+        batches.countDocuments({ participantId }),
+    ]);
 
     return {
-        batches: batches.map(batch => ({
-            id: batch.id,
+        batches: batchDocuments.map(batch => ({
+            id: batch._id,
             measurementCount: batch.measurementCount,
             createdAt: batch.createdAt,
-            measurements: batch.measurements.map(measurement => ({
-                timestamp: measurement.measuredAt,
-                receivedAt: measurement.receivedAt,
-                environment: measurement.environment,
-                location: {
-                    latitude: measurement.latitude,
-                    longitude: measurement.longitude,
-                    altitude: measurement.altitude,
-                    accuracy: measurement.accuracy,
-                    altitudeAccuracy: measurement.altitudeAccuracy,
-                    speed: measurement.speed,
-                    heading: measurement.heading,
-                },
-                motion: {
-                    accelerometer: {
-                        x: measurement.accelerometerX,
-                        y: measurement.accelerometerY,
-                        z: measurement.accelerometerZ,
-                    },
-                    gyroscope: {
-                        x: measurement.gyroscopeX,
-                        y: measurement.gyroscopeY,
-                        z: measurement.gyroscopeZ,
-                    }
-                },
-                servingCell: formatCell({
-                    registered: measurement.servingRegistered,
-                    technology: measurement.servingTechnology,
-                    cellId: measurement.servingCellId,
-                    pci: measurement.servingPci,
-                    tac: measurement.servingTac,
-                    arfcn: measurement.servingArfcn,
-                    mcc: measurement.servingMcc,
-                    mnc: measurement.servingMnc,
-                    rsrp: measurement.servingRsrp,
-                    rsrq: measurement.servingRsrq,
-                    rssi: measurement.servingRssi,
-                    sinr: measurement.servingSinr,
-                    timingAdvance: measurement.servingTimingAdvance,
-                }),
-                neighboringCells: measurement.neighboringCells.map(formatCell),
-            })),
+            measurements: [...batch.measurements]
+                .sort((first, second) => first.timestamp.getTime() - second.timestamp.getTime())
+                .map(formatMeasurement),
         })),
         pagination: {
             page,

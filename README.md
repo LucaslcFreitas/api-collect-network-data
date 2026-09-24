@@ -4,7 +4,7 @@ Antes de executar o projeto, é necessário instalar:
 
 - Node 24.08^
 - Yarn: `$ npm install -g yarn`
-- PostgreSQL 18 (pode ser via Docker)
+- MongoDB 7 ou superior (local ou hospedado)
 
 # Instalar as dependências
 
@@ -12,13 +12,11 @@ Execute:
 
 `yarn install`
 
-# Configurar o PostgreSQL
+# Configurar o MongoDB
 
-É necessário possuir um banco de dados PostgreSQL para a API.
+É necessário possuir um banco de dados MongoDB para a API. Crie um banco com o nome desejado e as collections `participants` e `batches` serão criadas automaticamente se ainda não existirem.
 
-`CREATE DATABASE mobile_data;`
-
-O nome utilizado não precisa ser exatamente esse, mas deverá corresponder à configuração utilizada na variável `DATABASE_URL`.
+O driver cria automaticamente os índices de unicidade necessários para `tokenHash` e para o par `participantId`/`clientBatchId`.
 
 # Configurar as variáveis de ambiente
 
@@ -28,29 +26,11 @@ Exemplo:
 
 `NODE_ENV=development`
 `PORT=3000`
-`DATABASE_URL="postgresql://postgres:PASSWORD@localhost:5432/mobile_data"`
+`DATABASE_URL="mongodb://localhost:27017/mobile_data"`
 
-Para DATABASE_URL, substitua:
+Para um servidor MongoDB autenticado, use uma URL no formato `mongodb://usuario:SENHA@host:27017/mobile_data?authSource=admin`.
 
-- `postgres` pelo usuário do PostgreSQL;
-- `PASSWORD` pela senha do usuário;
-- `localhost` pelo endereço do servidor PostgreSQL, caso esteja em outro computador;
-- `5432` pela porta utilizada pelo PostgreSQL;
-- `mobile_data` pelo nome do banco.
-
-# Configurar o Prisma
-
-Depois de instalar as dependências e configurar o .env, gere o Prisma Client:
-
-`npx prisma generate`
-
-# Executar as migrations
-
-O projeto utiliza migrations do Prisma para criar e atualizar a estrutura do banco de dados.
-
-Para um ambiente de desenvolvimento recém-configurado, execute:
-
-`npx prisma migrate dev`
+Não há migrations: os documentos são gravados nas collections `participants` e `batches`. Cada documento de `batches` contém suas medições e células vizinhas embutidas.
 
 # Executar a API em desenvolvimento
 

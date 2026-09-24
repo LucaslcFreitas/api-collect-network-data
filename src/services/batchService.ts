@@ -1,5 +1,5 @@
 import { randomUUID } from 'node:crypto';
-import { prisma } from '../db/prisma.js';
+import { getCollections, type BatchDocument, type CellDocument } from '../db/mongodb.js';
 import type { BatchInput } from '../schemas/batchSchema.js';
 
 function toDate(timestamp: number): Date {
@@ -12,12 +12,22 @@ function toDate(timestamp: number): Date {
     return date;
 }
 
-function convertCellId(cellId: number | null | undefined): bigint | undefined {
-    if (cellId === null || cellId === undefined) {
-        return undefined;
-    }
-
-    return BigInt(cellId);
+function toCellDocument(cell: BatchInput['measurements'][number]['servingCell']): CellDocument {
+    return {
+        registered: cell.registered,
+        technology: cell.technology,
+        cellId: cell.cellId == null ? null : String(cell.cellId),
+        pci: cell.pci ?? null,
+        tac: cell.tac ?? null,
+        arfcn: cell.arfcn ?? null,
+        mcc: cell.mcc ?? null,
+        mnc: cell.mnc ?? null,
+        rsrp: cell.rsrp ?? null,
+        rsrq: cell.rsrq ?? null,
+        rssi: cell.rssi ?? null,
+        sinr: cell.sinr ?? null,
+        timingAdvance: cell.timingAdvance ?? null,
+    };
 }
 
 export async function createBatch(
@@ -27,99 +37,52 @@ export async function createBatch(
     batchId: string;
     measurementCount: number;
 }> {
-    const result = await prisma.$transaction(async transaction => {
-        const batch = await transaction.batch.create({
-            data: {
-                participantId,
-                clientBatchId: input.clientBatchId,
-                measurementCount: input.measurements.length,
-                schemaVersion: 1,
-            },
-            select: {
-                id: true,
-            },
-        });
-
-        const measurements = input.measurements.map(measurement => {
-            const cell = measurement.servingCell;
-
-            return {
-                id: randomUUID(),
-                batchId: batch.id,
-                measuredAt: toDate(measurement.timestamp),
-                environment: measurement.environment,
+    const now = new Date();
+    const batch: BatchDocument = {
+        _id: randomUUID(),
+        participantId,
+        clientBatchId: input.clientBatchId,
+        createdAt: now,
+        measurementCount: input.measurements.length,
+        schemaVersion: 1,
+        measurements: input.measurements.map(measurement => ({
+            id: randomUUID(),
+            timestamp: toDate(measurement.timestamp),
+            receivedAt: now,
+            environment: measurement.environment ?? null,
+            location: {
                 latitude: measurement.location.latitude,
                 longitude: measurement.location.longitude,
-                altitude: measurement.location.altitude,
-                accuracy: measurement.location.accuracy,
-                altitudeAccuracy: measurement.location.altitudeAccuracy,
-                speed: measurement.location.speed,
-                heading: measurement.location.heading,
-                accelerometerX: measurement.motion.accelerometer.x,
-                accelerometerY: measurement.motion.accelerometer.y,
-                accelerometerZ: measurement.motion.accelerometer.z,
-                gyroscopeX: measurement.motion.gyroscope.x,
-                gyroscopeY: measurement.motion.gyroscope.y,
-                gyroscopeZ: measurement.motion.gyroscope.z,
-                servingRegistered: cell.registered,
-                servingTechnology: cell.technology,
-                servingCellId: convertCellId(cell.cellId),
-                servingPci: cell.pci,
-                servingTac: cell.tac,
-                servingArfcn: cell.arfcn,
-                servingMcc: cell.mcc,
-                servingMnc: cell.mnc,
-                servingRsrp: cell.rsrp,
-                servingRsrq: cell.rsrq,
-                servingRssi: cell.rssi,
-                servingSinr: cell.sinr,
-                servingTimingAdvance: cell.timingAdvance,
-            };
-        });
+                altitude: measurement.location.altitude ?? null,
+                accuracy: measurement.location.accuracy ?? null,
+                altitudeAccuracy: measurement.location.altitudeAccuracy ?? null,
+                speed: measurement.location.speed ?? null,
+                heading: measurement.location.heading ?? null,
+            },
+            motion: measurement.motion,
+            servingCell: toCellDocument(measurement.servingCell),
+            neighboringCells: measurement.neighboringCells.map(toCellDocument),
+        })),
+    };
 
-        await transaction.measurement.createMany({ data: measurements });
-
-        const neighboringCells = input.measurements.flatMap((measurement, index) =>
-            measurement.neighboringCells.map(neighbor => ({
-                measurementId: measurements[index].id,
-                registered: neighbor.registered,
-                technology: neighbor.technology,
-                cellId: convertCellId(neighbor.cellId),
-                pci: neighbor.pci,
-                tac: neighbor.tac,
-                arfcn: neighbor.arfcn,
-                mcc: neighbor.mcc,
-                mnc: neighbor.mnc,
-                rsrp: neighbor.rsrp,
-                rsrq: neighbor.rsrq,
-                rssi: neighbor.rssi,
-                sinr: neighbor.sinr,
-                timingAdvance: neighbor.timingAdvance,
-            })),
-        );
-
-        if (neighboringCells.length > 0) {
-            await transaction.neighboringCell.createMany({
-                data: neighboringCells,
-            });
+    const { batches, participants } = await getCollections();
+    try {
+        await batches.insertOne(batch);
+    } catch (error) {
+        if (error instanceof Error && 'code' in error && error.code === 11000) {
+            throw new Error('Unique constraint violation');
         }
 
-        await transaction.participant.update({
-            where: {
-                id: participantId,
-            },
-            data: {
-                lastSeenAt: new Date(),
-            },
-        });
+        throw error;
+    }
 
-        return batch;
-    }, {
-        timeout: 150_000,
-    });
+    await participants.updateOne(
+        { _id: participantId },
+        { $set: { lastSeenAt: now } },
+    );
 
     return {
-        batchId: result.id,
-        measurementCount: input.measurements.length,
+        batchId: batch._id,
+        measurementCount: batch.measurementCount,
     };
 }

@@ -1,4 +1,5 @@
-import { prisma } from '../db/prisma.js';
+import { randomUUID } from 'node:crypto';
+import { getCollections } from '../db/mongodb.js';
 import {
     generateParticipantToken,
     hashParticipantToken,
@@ -16,90 +17,89 @@ export async function createParticipant(
     const token = generateParticipantToken();
     const tokenHash = hashParticipantToken(token);
 
-    const participant = await prisma.participant.create({
-        data: {
-            tokenHash,
-            ...data,
-        },
-        select: {
-            id: true,
-        },
+    const { participants } = await getCollections();
+    const participantId = randomUUID();
+
+    await participants.insertOne({
+        _id: participantId,
+        tokenHash,
+        ...data,
+        createdAt: new Date(),
+        status: 'ACTIVE',
     });
 
     return {
-        participantId: participant.id,
+        participantId,
         token,
     };
 }
 
 export async function getParticipant(participantId: string) {
-    return prisma.participant.findUnique({
-        where: {
-            id: participantId,
-        },
+    const { participants } = await getCollections();
 
-        select: {
-            id: true,
-            appVersion: true,
-            deviceModel: true,
-            os: true,
-            status: true,
-            createdAt: true,
-            lastSeenAt: true,
+    const participant = await participants.findOne(
+        { _id: participantId },
+        {
+            projection: {
+                _id: 1,
+                appVersion: 1,
+                deviceModel: 1,
+                os: 1,
+                status: 1,
+                createdAt: 1,
+                lastSeenAt: 1,
+            },
         },
-    });
+    );
+
+    return participant && {
+        id: participant._id,
+        appVersion: participant.appVersion ?? null,
+        deviceModel: participant.deviceModel ?? null,
+        os: participant.os ?? null,
+        status: participant.status,
+        createdAt: participant.createdAt,
+        lastSeenAt: participant.lastSeenAt ?? null,
+    };
 }
 
 export async function updateParticipant(
     participantId: string,
     data: UpdateParticipantInput,
 ) {
-    return prisma.participant.update({
-        where: {
-            id: participantId,
-        },
+    const { participants } = await getCollections();
 
-        data,
+    await participants.updateOne(
+        { _id: participantId },
+        { $set: data },
+    );
 
-        select: {
-            id: true,
-            appVersion: true,
-            deviceModel: true,
-            os: true,
-            status: true,
-            createdAt: true,
-            lastSeenAt: true,
-        },
-    });
+    return getParticipant(participantId);
 }
 
 export async function revokeParticipant(participantId: string) {
-    return prisma.participant.update({
-        where: {
-            id: participantId,
-        },
+    const { participants } = await getCollections();
+    const revokedAt = new Date();
 
-        data: {
-            status: 'REVOKED',
-            revokedAt: new Date(),
-        },
+    await participants.updateOne(
+        { _id: participantId },
+        { $set: { status: 'REVOKED', revokedAt } },
+    );
 
-        select: {
-            id: true,
-            status: true,
-            revokedAt: true,
-        },
-    });
+    return {
+        id: participantId,
+        status: 'REVOKED' as const,
+        revokedAt,
+    };
 }
 
 export async function deleteParticipant(participantId: string) {
-    return prisma.participant.delete({
-        where: {
-            id: participantId,
-        },
+    const { participants, batches } = await getCollections();
 
-        select: {
-            id: true,
-        },
-    });
+    await Promise.all([
+        participants.deleteOne({ _id: participantId }),
+        batches.deleteMany({ participantId }),
+    ]);
+
+    return { id: participantId };
 }

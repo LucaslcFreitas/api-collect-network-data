@@ -1,10 +1,6 @@
 import app from './app.js';
 import { env } from './config/env.js';
-import { prisma } from './db/prisma.js';
-
-(BigInt.prototype as any).toJSON = function () {
-    return this.toString();
-};
+import { disconnectDatabase } from './db/mongodb.js';
 
 const server = app.listen(env.port, () => {
     console.log(`API running on http://localhost:${env.port}`);
@@ -16,7 +12,7 @@ async function shutdown(signal: string): Promise<void> {
     server.close(async () => {
         console.log('HTTP server closed.');
 
-        await prisma.$disconnect();
+        await disconnectDatabase();
 
         console.log('Database connection closed.');
 

@@ -1,5 +1,5 @@
 import { Request, Response, NextFunction } from 'express';
-import { prisma } from '../db/prisma.js';
+import { getCollections } from '../db/mongodb.js';
 import { hashParticipantToken } from '../utils/token.js';
 
 export interface AuthenticatedRequest extends Request {
@@ -36,15 +36,11 @@ export async function authenticateParticipant(
 
         const tokenHash = hashParticipantToken(token);
 
-        const participant = await prisma.participant.findUnique({
-            where: {
-                tokenHash,
-            },
-            select: {
-                id: true,
-                status: true,
-            },
-        });
+        const { participants } = await getCollections();
+        const participant = await participants.findOne(
+            { tokenHash },
+            { projection: { _id: 1, status: 1 } },
+        );
 
         if (!participant || participant.status !== 'ACTIVE') {
             res.status(401).json({
@@ -55,16 +51,12 @@ export async function authenticateParticipant(
             return;
         }
 
-        (req as AuthenticatedRequest).participantId = participant.id;
+        (req as AuthenticatedRequest).participantId = participant._id;
 
-        await prisma.participant.update({
-            where: {
-                id: participant.id,
-            },
-            data: {
-                lastSeenAt: new Date(),
-            },
-        });
+        await participants.updateOne(
+            { _id: participant._id },
+            { $set: { lastSeenAt: new Date() } },
+        );
 
         next();
     } catch (error) {
