@@ -74,6 +74,10 @@ Os endpoints disponíveis são:
 - - Insert (POST, protegido): `http://ADDRESS:PORT/api/v1/batches`
 - Data
 - - Get Data (GET, protegido): `http://ADDRESS:PORT/api/v1/data`
+- Environment
+- - Listar opções (GET, público): `http://ADDRESS:PORT/api/v1/environment`
+- - Adicionar morphology (POST, protegido): `http://ADDRESS:PORT/api/v1/environment/morphology`
+- - Adicionar topography (POST, protegido): `http://ADDRESS:PORT/api/v1/environment/topography`
 - Health (GET): `http://ADDRESS:PORT/api/v1/health`
 
 Os endpoints protegidos utilizam:
