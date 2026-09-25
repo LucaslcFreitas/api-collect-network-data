@@ -1,5 +1,7 @@
 import { z } from 'zod';
 
+export const MAX_MEASUREMENTS_PER_BATCH = 50_000;
+
 const locationSchema = z.object({
     latitude: z.number().finite().min(-90).max(90),
     longitude: z.number().finite().min(-180).max(180),
@@ -66,7 +68,10 @@ export const batchSchema = z.object({
             'clientBatchId contains invalid characters.',
         ),
 
-    measurements: z.array(measurementSchema).min(1).max(500),
+    measurements: z
+        .array(measurementSchema)
+        .min(1)
+        .max(MAX_MEASUREMENTS_PER_BATCH),
 });
 
 export type BatchInput = z.infer<typeof batchSchema>;
