@@ -48,7 +48,8 @@ const cellSchema = z.object({
 
 export const measurementSchema = z.object({
     timestamp: z.number().int().positive(),
-    environment: z.string().max(100).nullable().optional(),
+    morphology: z.string().max(100).nullable().optional(),
+    topography: z.string().max(100).nullable().optional(),
     location: locationSchema,
     motion: motionSchema,
     servingCell: cellSchema,

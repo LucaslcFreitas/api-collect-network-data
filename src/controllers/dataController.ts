@@ -1,7 +1,7 @@
 import { Request, Response } from 'express';
 import { AuthenticatedRequest } from '../middleware/authMiddleware.js';
 import { dataQuerySchema } from '../schemas/dataQuerySchema.js';
-import { getParticipantData } from '../services/dataService.js';
+import { getAllData, getParticipantData } from '../services/dataService.js';
 
 export async function getMyData(req: Request, res: Response): Promise<void> {
     try {
@@ -42,6 +42,28 @@ export async function getMyData(req: Request, res: Response): Promise<void> {
         res.status(500).json({
             error: 'INTERNAL_SERVER_ERROR',
             message: 'Unable to retrieve participant data.',
+        });
+    }
+}
+
+export async function getAll(req: Request, res: Response): Promise<void> {
+    try {
+        const authenticatedRequest = req as AuthenticatedRequest;
+
+        if (!authenticatedRequest.participantId) {
+            res.status(401).json({
+                error: 'UNAUTHORIZED',
+            });
+            return;
+        }
+
+        res.status(200).json(await getAllData());
+    } catch (error) {
+        console.error('Failed to retrieve all participant data:', error);
+
+        res.status(500).json({
+            error: 'INTERNAL_SERVER_ERROR',
+            message: 'Unable to retrieve all participant data.',
         });
     }
 }

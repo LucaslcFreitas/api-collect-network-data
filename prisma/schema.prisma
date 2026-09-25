@@ -12,6 +12,7 @@ model Participant {
   appVersion  String?
   deviceModel String?
   os          String?
+  admin      Boolean           @default(false)
   createdAt  DateTime          @default(now())
   lastSeenAt DateTime?
   revokedAt DateTime?
@@ -62,7 +63,8 @@ model Measurement {
   measuredAt DateTime
   receivedAt DateTime @default(now())
 
-  environment      String? @db.VarChar(100)
+  morphology      String? @db.VarChar(100)
+  topography      String? @db.VarChar(100)
   latitude         Float?
   longitude        Float?
   altitude         Float?

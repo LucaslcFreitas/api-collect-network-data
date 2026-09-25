@@ -4,6 +4,7 @@ import { hashParticipantToken } from '../utils/token.js';
 
 export interface AuthenticatedRequest extends Request {
     participantId?: string;
+    isAdmin?: boolean;
 }
 
 export async function authenticateParticipant(
@@ -43,6 +44,7 @@ export async function authenticateParticipant(
             select: {
                 id: true,
                 status: true,
+                admin: true,
             },
         });
 
@@ -56,6 +58,7 @@ export async function authenticateParticipant(
         }
 
         (req as AuthenticatedRequest).participantId = participant.id;
+        (req as AuthenticatedRequest).isAdmin = participant.admin;
 
         await prisma.participant.update({
             where: {
@@ -75,4 +78,20 @@ export async function authenticateParticipant(
             message: 'Authentication failed.',
         });
     }
+}
+
+export function requireAdmin(
+    req: Request,
+    res: Response,
+    next: NextFunction,
+): void {
+    if (!(req as AuthenticatedRequest).isAdmin) {
+        res.status(403).json({
+            error: 'FORBIDDEN',
+            message: 'Administrator access is required.',
+        });
+        return;
+    }
+
+    next();
 }

@@ -1,0 +1,2 @@
+ALTER TABLE "participants"
+ADD COLUMN "admin" BOOLEAN NOT NULL DEFAULT false;
