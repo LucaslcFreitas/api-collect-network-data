@@ -5,10 +5,10 @@
     "main": "index.js",
     "scripts": {
         "dev": "tsx watch src/server.ts",
-        "build": "prisma generate && prisma db seed && tsc",
+        "build": "prisma generate && tsc",
         "start": "node dist/server.js",
         "typecheck": "tsc --noEmit",
-        "db:migrate:deploy": "prisma migrate deploy",
+        "predeploy": "prisma migrate deploy && prisma db seed",
         "postinstall": "prisma skills sync || exit 0"
     },
     "engines": {
