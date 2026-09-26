@@ -3,8 +3,8 @@ import { z } from 'zod';
 export const MAX_MEASUREMENTS_PER_BATCH = 50_000;
 
 const locationSchema = z.object({
-    latitude: z.number().finite().min(-90).max(90),
-    longitude: z.number().finite().min(-180).max(180),
+    latitude: z.number().finite().min(-90).max(90).nullable(),
+    longitude: z.number().finite().min(-180).max(180).nullable(),
     altitude: z.number().finite().nullable().optional(),
     accuracy: z.number().finite().nonnegative().nullable().optional(),
     altitudeAccuracy: z.number().finite().nonnegative().nullable().optional(),
@@ -13,15 +13,15 @@ const locationSchema = z.object({
 });
 
 const accelerometerSchema = z.object({
-    x: z.number().finite(),
-    y: z.number().finite(),
-    z: z.number().finite(),
+    x: z.number().finite().nullable().optional(),
+    y: z.number().finite().nullable().optional(),
+    z: z.number().finite().nullable().optional(),
 });
 
 const gyroscopeSchema = z.object({
-    x: z.number().finite(),
-    y: z.number().finite(),
-    z: z.number().finite(),
+    x: z.number().finite().nullable().optional(),
+    y: z.number().finite().nullable().optional(),
+    z: z.number().finite().nullable().optional(),
 });
 
 const motionSchema = z.object({
@@ -30,8 +30,8 @@ const motionSchema = z.object({
 });
 
 const cellSchema = z.object({
-    registered: z.boolean(),
-    technology: z.string().min(1).max(20),
+    registered: z.boolean().nullable(),
+    technology: z.string().min(0).max(30).nullable(),
 
     cellId: z.number().int().nonnegative().nullable().optional(),
     pci: z.number().int().nonnegative().nullable().optional(),
@@ -55,13 +55,13 @@ export const measurementSchema = z.object({
     location: locationSchema,
     motion: motionSchema,
     servingCell: cellSchema,
-    neighboringCells: z.array(cellSchema).max(32),
+    neighboringCells: z.array(cellSchema).max(50),
 });
 
 export const batchSchema = z.object({
     clientBatchId: z
         .string()
-        .min(16)
+        .min(10)
         .max(64)
         .regex(
             /^[a-zA-Z0-9_-]+$/,
