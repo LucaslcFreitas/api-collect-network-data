@@ -52,9 +52,9 @@ export const measurementSchema = z.object({
     timestamp: z.number().int().positive(),
     morphology: z.string().max(100).nullable().optional(),
     topography: z.string().max(100).nullable().optional(),
-    location: locationSchema,
-    motion: motionSchema,
-    servingCell: cellSchema,
+    location: locationSchema.nullable(),
+    motion: motionSchema.nullable(),
+    servingCell: cellSchema.nullable(),
     neighboringCells: z.array(cellSchema).max(50),
 });
 

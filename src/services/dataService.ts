@@ -63,6 +63,18 @@ const batchSelect = {
     },
 } satisfies Prisma.BatchSelect;
 
+const participantBatchSelect = {
+    ...batchSelect,
+    measurements: {
+        ...batchSelect.measurements,
+        where: {
+            servingRegistered: { not: null },
+            servingRsrp: { not: null },
+            servingRsrq: { not: null },
+        },
+    },
+} satisfies Prisma.BatchSelect;
+
 type SelectedBatch = Prisma.BatchGetPayload<{ select: typeof batchSelect }>;
 
 function formatCell<T extends {
@@ -168,7 +180,7 @@ export async function getParticipantData(
             skip,
             take: limit,
 
-            select: batchSelect,
+            select: participantBatchSelect,
         }),
 
         prisma.batch.count({
