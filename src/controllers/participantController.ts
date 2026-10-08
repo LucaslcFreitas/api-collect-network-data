@@ -4,6 +4,7 @@ import {
     getParticipant,
     revokeParticipant,
     deleteParticipant,
+    getAllParticipants,
 } from '../services/participantService.js';
 import { AuthenticatedRequest } from '../middleware/authMiddleware.js';
 import { updateParticipant } from '../services/participantService.js';
@@ -77,6 +78,24 @@ export async function getMe(req: Request, res: Response): Promise<void> {
         res.status(500).json({
             error: 'INTERNAL_SERVER_ERROR',
             message: 'Unable to retrieve participant information.',
+        });
+    }
+}
+
+export async function getAllParticipantsController(
+    _req: Request,
+    res: Response,
+): Promise<void> {
+    try {
+        res.status(200).json({
+            participants: await getAllParticipants(),
+        });
+    } catch (error) {
+        console.error('Failed to retrieve all participants:', error);
+
+        res.status(500).json({
+            error: 'INTERNAL_SERVER_ERROR',
+            message: 'Unable to retrieve all participants.',
         });
     }
 }

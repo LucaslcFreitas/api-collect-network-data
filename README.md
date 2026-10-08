@@ -70,8 +70,11 @@ Os endpoints disponíveis são:
 - - Update Me (PATCH, protegido): `http://ADDRESS:PORT/api/v1/participant`
 - - Revoke (POST, protegido): `http://ADDRESS:PORT/api/v1/participant/revoke`
 - - Delete (DELETE, protegido): `http://ADDRESS:PORT/api/v1/participant`
+- - Get All Participants (GET, protegido para admin): `http://ADDRESS:PORT/api/v1/participant/getAllParticipants`
 - Batches
 - - Insert (POST, protegido): `http://ADDRESS:PORT/api/v1/batches`
+- - Get Batches (GET, protegido para admin): `http://ADDRESS:PORT/api/v1/batches/getBatches?participantId=UUID`
+- - Get Measurements (GET, protegido para admin): `http://ADDRESS:PORT/api/v1/batches/getMeasurements?batchId=UUID`
 - Data
 - - Get Data (GET, protegido): `http://ADDRESS:PORT/api/v1/data`
 - - Get All (GET, protegido para admin): `http://ADDRESS:PORT/api/v1/data/getAll`

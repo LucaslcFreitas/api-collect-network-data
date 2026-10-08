@@ -50,6 +50,22 @@ export async function getParticipant(participantId: string) {
     });
 }
 
+export async function getAllParticipants() {
+    return prisma.participant.findMany({
+        orderBy: {
+            createdAt: 'asc',
+        },
+        select: {
+            id: true,
+            appVersion: true,
+            deviceModel: true,
+            os: true,
+            createdAt: true,
+            lastSeenAt: true,
+        },
+    });
+}
+
 export async function updateParticipant(
     participantId: string,
     data: UpdateParticipantInput,

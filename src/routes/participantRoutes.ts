@@ -5,9 +5,12 @@ import {
     updateMe,
     revokeMe,
     deleteMe,
+    getAllParticipantsController,
 } from '../controllers/participantController.js';
-// import { participantRegistrationRateLimit } from '../middleware/rateLimitMiddleware.js';
-import { authenticateParticipant } from '../middleware/authMiddleware.js';
+import {
+    authenticateParticipant,
+    requireAdmin,
+} from '../middleware/authMiddleware.js';
 
 const router = Router();
 
@@ -15,6 +18,13 @@ router.post('/', registerParticipant);
 // router.post('/', participantRegistrationRateLimit, registerParticipant);
 
 router.get('/', authenticateParticipant, getMe);
+
+router.get(
+    '/getAllParticipants',
+    authenticateParticipant,
+    requireAdmin,
+    getAllParticipantsController,
+);
 
 router.patch('/', authenticateParticipant, updateMe);
 

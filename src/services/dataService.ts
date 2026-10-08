@@ -160,6 +160,88 @@ function formatBatch(batch: SelectedBatch) {
     };
 }
 
+export async function getBatches(participantId: string) {
+    const batches = await prisma.batch.findMany({
+        where: {
+            participantId,
+        },
+        orderBy: {
+            createdAt: 'asc',
+        },
+        select: {
+            id: true,
+            measurementCount: true,
+            createdAt: true,
+        },
+    });
+
+    return {
+        batches,
+    };
+}
+
+export async function getMeasurements(batchId: string) {
+    const batch = await prisma.batch.findUnique({
+        where: {
+            id: batchId,
+        },
+        select: {
+            measurements: {
+                orderBy: {
+                    measuredAt: 'asc',
+                },
+                select: batchSelect.measurements.select,
+            },
+        },
+    });
+
+    return {
+        measurements: batch?.measurements.map(measurement => ({
+            timestamp: measurement.measuredAt,
+            receivedAt: measurement.receivedAt,
+            morphology: measurement.morphology,
+            topography: measurement.topography,
+            location: {
+                latitude: measurement.latitude,
+                longitude: measurement.longitude,
+                altitude: measurement.altitude,
+                accuracy: measurement.accuracy,
+                altitudeAccuracy: measurement.altitudeAccuracy,
+                speed: measurement.speed,
+                heading: measurement.heading,
+            },
+            motion: {
+                accelerometer: {
+                    x: measurement.accelerometerX,
+                    y: measurement.accelerometerY,
+                    z: measurement.accelerometerZ,
+                },
+                gyroscope: {
+                    x: measurement.gyroscopeX,
+                    y: measurement.gyroscopeY,
+                    z: measurement.gyroscopeZ,
+                },
+            },
+            servingCell: formatCell({
+                registered: measurement.servingRegistered,
+                technology: measurement.servingTechnology,
+                cellId: measurement.servingCellId,
+                pci: measurement.servingPci,
+                tac: measurement.servingTac,
+                arfcn: measurement.servingArfcn,
+                mcc: measurement.servingMcc,
+                mnc: measurement.servingMnc,
+                rsrp: measurement.servingRsrp,
+                rsrq: measurement.servingRsrq,
+                rssi: measurement.servingRssi,
+                sinr: measurement.servingSinr,
+                timingAdvance: measurement.servingTimingAdvance,
+            }),
+            neighboringCells: measurement.neighboringCells.map(formatCell),
+        })) ?? [],
+    };
+}
+
 export async function getParticipantData(
     participantId: string,
     page: number,
