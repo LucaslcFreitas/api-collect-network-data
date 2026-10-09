@@ -116,7 +116,7 @@ export async function createBatch(
 
         return batch;
     }, {
-        timeout: 150_000,
+        timeout: 180_000,
     });
 
     return {

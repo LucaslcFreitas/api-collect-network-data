@@ -1,6 +1,8 @@
 import { prisma } from '../db/prisma.js';
 import type { Prisma } from '@prisma/client';
 
+const DEFAULT_QUERY_TIMEOUT = 180_000;
+
 const batchSelect = {
     id: true,
     clientBatchId: true,
@@ -161,18 +163,22 @@ function formatBatch(batch: SelectedBatch) {
 }
 
 export async function getBatches(participantId: string) {
-    const batches = await prisma.batch.findMany({
-        where: {
-            participantId,
-        },
-        orderBy: {
-            createdAt: 'asc',
-        },
-        select: {
-            id: true,
-            measurementCount: true,
-            createdAt: true,
-        },
+    const [batches] = await prisma.$transaction([
+        prisma.batch.findMany({
+            where: {
+                participantId,
+            },
+            orderBy: {
+                createdAt: 'asc',
+            },
+            select: {
+                id: true,
+                measurementCount: true,
+                createdAt: true,
+            },
+        }),
+    ], {
+        timeout: DEFAULT_QUERY_TIMEOUT,
     });
 
     return {
@@ -181,18 +187,22 @@ export async function getBatches(participantId: string) {
 }
 
 export async function getMeasurements(batchId: string) {
-    const batch = await prisma.batch.findUnique({
-        where: {
-            id: batchId,
-        },
-        select: {
-            measurements: {
-                orderBy: {
-                    measuredAt: 'asc',
-                },
-                select: batchSelect.measurements.select,
+    const [batch] = await prisma.$transaction([
+        prisma.batch.findUnique({
+            where: {
+                id: batchId,
             },
-        },
+            select: {
+                measurements: {
+                    orderBy: {
+                        measuredAt: 'asc',
+                    },
+                    select: batchSelect.measurements.select,
+                },
+            },
+        }),
+    ], {
+        timeout: DEFAULT_QUERY_TIMEOUT,
     });
 
     return {
@@ -271,7 +281,7 @@ export async function getParticipantData(
             },
         }),
     ], {
-        timeout: 120_000,
+        timeout: 180_000,
     });
 
     return {

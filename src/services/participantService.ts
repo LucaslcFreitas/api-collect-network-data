@@ -5,6 +5,8 @@ import {
 } from '../utils/token.js';
 import type { UpdateParticipantInput } from '../schemas/participantSchema.js';
 
+const DEFAULT_QUERY_TIMEOUT = 180_000;
+
 export interface CreateParticipantResult {
     participantId: string;
     token: string;
@@ -51,19 +53,25 @@ export async function getParticipant(participantId: string) {
 }
 
 export async function getAllParticipants() {
-    return prisma.participant.findMany({
-        orderBy: {
-            createdAt: 'asc',
-        },
-        select: {
-            id: true,
-            appVersion: true,
-            deviceModel: true,
-            os: true,
-            createdAt: true,
-            lastSeenAt: true,
-        },
+    const [participants] = await prisma.$transaction([
+        prisma.participant.findMany({
+            orderBy: {
+                createdAt: 'asc',
+            },
+            select: {
+                id: true,
+                appVersion: true,
+                deviceModel: true,
+                os: true,
+                createdAt: true,
+                lastSeenAt: true,
+            },
+        }),
+    ], {
+        timeout: DEFAULT_QUERY_TIMEOUT,
     });
+
+    return participants;
 }
 
 export async function updateParticipant(
