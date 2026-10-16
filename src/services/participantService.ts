@@ -56,7 +56,10 @@ export async function getAllParticipants() {
     const [participants] = await prisma.$transaction([
         prisma.participant.findMany({
             orderBy: {
-                createdAt: 'asc',
+                lastSeenAt: {
+                    sort: 'desc',
+                    nulls: 'last',
+                },
             },
             select: {
                 id: true,
